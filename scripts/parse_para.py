@@ -6,6 +6,15 @@ def parse_para(filename):
     with open(filename, "r") as f:
         content = f.read()
 
+    lang_idx = content.find("xml:lang=\"")
+    sep = "\""
+    if lang_idx == -1:
+        lang_idx = content.find("xml:lang='")
+        sep = "'"
+    content = content[lang_idx+10:]
+    end_idx = content.find(sep)
+    lang = content[:end_idx]
+
     paragraphs = ""
     start_idx = content.find("<para>")
     while start_idx != -1:
@@ -19,4 +28,7 @@ def parse_para(filename):
 
         start_idx = content.find("<para>")
 
-    return paragraphs
+    return { "para" : paragraphs, "lang" : lang }
+
+
+
