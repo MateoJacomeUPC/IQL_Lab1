@@ -45,13 +45,36 @@ for language in modnames:
     globals()[package_name] = importlib.import_module(package_name)
 
 
+langs = {}
+for index, row in mydata.iterrows():
+    if row["Language"] == "Multi-language":
+        continue
 
-exec("cat = spacy.lang.ca.Catalan()")
-# Create a blank Tokenizer with just the English vocab
-tokenizer = Tokenizer(cat.vocab)
+    full_name = row["Language"].replace(" ", "")
+    code = row["Code"]
 
-tokens = tokenizer("que el reconeixement de la dignitat inherent i dels drets iguals i inalienables de tots els membres")
-print(type(tokens))
+    try:
+        # Import corresponding language
+        exec("nlp = spacy.lang.%s.%s()" % (code, full_name))
+        # Use default tokenizer for the language
+        langs[code] = {"lang" : nlp, "tokenizer" : nlp.tokenizer}
+        print("Added instance of %s" % (row["Language"]))
+    except ImportError:
+        print("Cannot import language %s" % (row["Language"]))
+    except AttributeError:
+        print("Error parsing name of %s to create instance" % (row["Language"]))
+    except SyntaxError as e:
+        print("Syntax error:", e)
+
+
+for code in langs:
+    tokenizer = langs[code]["tokenizer"]
+    text = "this is a test."
+    tokens = tokenizer(text)
+    print(type(tokens))
+    for token in tokens:
+        print(token)
+
 #TODO: create a dict of tokenizers, use it to parse the texts
 #TODO: investigate stopword and punctuation removal
 
