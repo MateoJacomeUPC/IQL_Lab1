@@ -1,5 +1,29 @@
 import os
 
+def parse_all(xml_dir):
+    all_files = os.listdir(xml_dir)
+    all_info = {}
+    for f in all_files:
+        xml_file = os.path.join(xml_dir, f)
+        if not os.path.isfile(xml_file):
+            continue
+        if xml_file[-4:] != ".xml":
+            continue
+        if xml_file.find("index.xml") != -1:
+            continue
+
+        print(xml_file)
+        info = parse_para(xml_file)
+        if info["lang"] in all_info:
+            # Do we discard it, replace it
+            # or append it?
+            print("duplicate of %s" % (info["lang"]))
+            continue
+
+        all_info[info["lang"]] = info
+
+    return all_info
+
 
 def parse_para(filename):
     content = ""
