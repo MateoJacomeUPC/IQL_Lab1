@@ -120,6 +120,14 @@ for code in langs:
     tables[code] = table
 
 
+for code in tables:
+    with open("../out/%s.txt" % (code), "w") as f:
+        contents = ""
+        for token in tables[code]:
+            row = tables[code][token]
+            contents += "%s %d %d\n" % (row["text"], row["len"], row["freq"])
+        f.write(contents)
+        print("Table for language %s written." % (code))
 
 #TODO: create a dict of tokenizers, use it to parse the texts
 #TODO: investigate stopword and punctuation removal
