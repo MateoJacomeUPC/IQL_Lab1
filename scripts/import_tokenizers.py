@@ -6,7 +6,6 @@ import importlib
 import spacy
 from spacy.tokenizer import Tokenizer
 from parse_para import parse_all
-import os
 
 XML_FILES_DIR = "../data/UDHR_XMLs/"
 
@@ -78,7 +77,7 @@ def get_language_tokenizers():
 def get_freq_length_table(tokens):
     table = {}
     for token in tokens:
-        if token.is_punct or token.is_stop:
+        if token.is_punct:
             continue
 
         # What do we do with numbers?
@@ -95,8 +94,8 @@ def get_freq_length_table(tokens):
                             "len"   : len(token),
                             "freq"  : 1
                            }
-
-    return table
+    sorted_table = dict(sorted(table.items(), key=lambda x: x[1]["freq"], reverse=True))
+    return sorted_table
 
 
 def print_freq_length_table(table):
@@ -135,7 +134,6 @@ for code in tables:
         f.write(contents)
         print("Table for language %s written." % (code))
 
-#TODO: investigate stopword and punctuation removal
 
 #interesting links being used:
 # https://spacy.io/api/tokenizer#_title
