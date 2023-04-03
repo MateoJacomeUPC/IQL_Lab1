@@ -6,6 +6,7 @@ import importlib
 import spacy
 from spacy.tokenizer import Tokenizer
 from parse_para import parse_all
+import os
 
 XML_FILES_DIR = "../data/UDHR_XMLs/"
 
