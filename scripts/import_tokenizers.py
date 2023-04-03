@@ -6,6 +6,7 @@ import importlib
 import spacy
 from spacy.tokenizer import Tokenizer
 from parse_para import parse_all
+import os
 
 XML_FILES_DIR = "../data/UDHR_XMLs/"
 
@@ -120,6 +121,11 @@ for code in langs:
     tables[code] = table
 
 
+# Create out directory if necessary
+if not os.path.exists("../out"):
+    os.mkdir("../out")
+
+# Write tables from all languages
 for code in tables:
     with open("../out/%s.txt" % (code), "w") as f:
         contents = ""
@@ -129,7 +135,6 @@ for code in tables:
         f.write(contents)
         print("Table for language %s written." % (code))
 
-#TODO: create a dict of tokenizers, use it to parse the texts
 #TODO: investigate stopword and punctuation removal
 
 #interesting links being used:
