@@ -1,0 +1,6 @@
+---
+title: "IQL Lab 1 - Data Analysis"
+authors: "Marc Perelló & Mateo Jácome"
+output: html_notebook
+---
+
