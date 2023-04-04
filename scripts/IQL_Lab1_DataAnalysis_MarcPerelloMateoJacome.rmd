@@ -4,3 +4,68 @@ authors: "Marc Perelló & Mateo Jácome"
 output: html_notebook
 ---
 
+# IQL Lab 1 - Data analysis
+
+## Load functions
+
+```{r}
+mean_word_length <- function(freq_table){
+  # Obtain relative frequency
+  sum_freq = sum(freq_table$V3)
+  rel_freq  = freq_table$V3/sum_freq
+  # Summation of relative freq by word length
+  mean_len = 0
+  for(i in 1:nrow(freq_table)){
+    mean_len = mean_len + rel_freq[i]*freq_table$V2[i]
+  }
+  return(mean_len)
+}
+
+compute_stats <- function(freq_table, lang_code){
+  # compute mean length
+  l = mean_word_length(freq_table)
+
+  # compute random baseline
+  rand_table = freq_table
+  rand_table$V2 = sample(rand_table$V2)
+  lr = mean_word_length(rand_table)
+
+  # compute minimum baseline
+  min_table = freq_table
+  min_table$V2 = sort(min_table$V2, decreasing=FALSE)
+  min_table$V3 = sort(min_table$V3, decreasing=TRUE)
+  lmin = mean_word_length(min_table)
+
+  # Degree of optimality
+  degree_opt = lmin/l
+
+  # Optimality score
+  opt_score = (lr-l)/(lr-lmin)
+
+  lang_code = lang_code
+  return(as.list(data.frame(lang_code, l, lr, lmin, degree_opt, opt_score)))
+}
+```
+
+## Computing stats
+
+```{r}
+df <- data.frame(matrix(ncol = 6, nrow = 0))
+cols <- c("lang_code","l", "lr", "lmin", "degree_opt", "opt_score")
+colnames(df) <- cols
+
+lang_codes = list()
+for (file in list.files("out")){
+  freq_table = read.table(paste0("out/", file), header = FALSE)
+  lang_code = substr(file, start = 1, stop = nchar(file)-4)
+  df[lang_code,] <- compute_stats(freq_table, lang_code)
+  append(lang_codes, lang_code)
+}
+
+df
+```
+## Plot stats
+
+```{r}
+plot(df$l, df$lr, xlim=c(0,20), ylim=c(0,20))
+```
