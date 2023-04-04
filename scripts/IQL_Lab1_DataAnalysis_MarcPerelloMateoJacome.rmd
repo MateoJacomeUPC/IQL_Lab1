@@ -9,6 +9,8 @@ output: html_notebook
 ## Load functions
 
 ```{r}
+library(ggplot2)
+
 mean_word_length <- function(freq_table){
   # Obtain relative frequency
   sum_freq = sum(freq_table$V3)
@@ -42,30 +44,44 @@ compute_stats <- function(freq_table, lang_code){
   # Optimality score
   opt_score = (lr-l)/(lr-lmin)
 
+  # tau correlation
+  corr = cor.test(freq_table$V2, freq_table$V3, method="kendall")
+
+  p_value = corr$p.value
+  tau = corr$estimate
+
   lang_code = lang_code
-  return(as.list(data.frame(lang_code, l, lr, lmin, degree_opt, opt_score)))
+  return(as.list(data.frame(lang_code, l, lr, lmin, degree_opt, opt_score, p_value, tau)))
 }
 ```
 
 ## Computing stats
 
 ```{r}
-df <- data.frame(matrix(ncol = 6, nrow = 0))
-cols <- c("lang_code","l", "lr", "lmin", "degree_opt", "opt_score")
+df <- data.frame(matrix(ncol = 8, nrow = 0))
+cols <- c("lang_code","l", "lr", "lmin", "degree_opt", "opt_score", "p_value","tau")
 colnames(df) <- cols
 
-lang_codes = list()
 for (file in list.files("out")){
   freq_table = read.table(paste0("out/", file), header = FALSE)
   lang_code = substr(file, start = 1, stop = nchar(file)-4)
   df[lang_code,] <- compute_stats(freq_table, lang_code)
-  append(lang_codes, lang_code)
 }
 
-df
+df <- df[df$degree_opt < 1,] # filter out perfect optimality
 ```
 ## Plot stats
 
 ```{r}
-plot(df$l, df$lr, xlim=c(0,20), ylim=c(0,20))
+
+plot = ggplot(df, aes(x = lr, y = l, color = opt_score)) +
+  geom_point(size=3) + theme_light() + coord_fixed() + xlim(0,13) + ylim(0,13) +
+        geom_abline(slope=1, intercept=0) +
+  geom_text(
+    label=df$lang_code,
+    nudge_x = 0.25, nudge_y = -0.25,
+    check_overlap = T
+  ) + ggtitle("Language Compression - Mean Lenght vs Random Baseline")
+plot
+
 ```
