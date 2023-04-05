@@ -1,7 +1,9 @@
 ---
 title: "IQL Lab 1 - Data Analysis"
-authors: "Marc Perelló & Mateo Jácome"
-output: html_notebook
+authors: Marc Perelló & Mateo Jácome
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 # IQL Lab 1 - Data analysis
@@ -10,6 +12,21 @@ output: html_notebook
 
 ```{r}
 library(ggplot2)
+library(ggrepel)
+options(ggrepel.max.overlaps = Inf)
+
+lang_info <- data.frame(code = c("af","ar","bg","bn","ca","cs","da","en","es","eu","fi","fr","ga","gu","he","hi","hr","hsb",
+                                 "hu","hy","id","it","kn","ky","la","lb","lg","lij","lt","lv"),
+                        name = c("Afrikaans","Arabic","Bulgarian","Bengali","Catalan","Czech","Danish","English","Spanish","Basque",
+                                 "Finnish","French","Irish","Gujarati","Hebrew","Hindi","Croatian","Upper Sorbian","Hungarian",
+                                 "Armenian","Indonesian","Italian","Kannada","Kyrgyz","Latin","Luxembourgish","Luganda","Ligurian",
+                                 "Lithuanian","Latvian"),
+                        fam  = c("Indo-European","Afro-Asiatic","Indo-European","Indo-European","Indo-European","Indo-European",
+                                 "Indo-European","Indo-European","Indo-European","Language isolate","Uralic","Indo-European",
+                                 "Indo-European","Indo-European","Afro-Asiatic","Indo-European","Indo-European","Indo-European",
+                                 "Uralic","Indo-European","Austronesian","Indo-European","Dravidian","Turkic","Indo-European",
+                                 "Indo-European","Atlantic–Congo","Indo-European","Indo-European","Indo-European"))
+                              
 
 mean_word_length <- function(freq_table){
   # Obtain relative frequency
@@ -24,6 +41,12 @@ mean_word_length <- function(freq_table){
 }
 
 compute_stats <- function(freq_table, lang_code){
+  # compute total tokens
+  tokens = sum(freq_table$V3)
+  
+  # compute total types
+  types = nrow(freq_table)
+  
   # compute mean length
   l = mean_word_length(freq_table)
 
@@ -50,37 +73,69 @@ compute_stats <- function(freq_table, lang_code){
   p_value = corr$p.value
   tau = corr$estimate
 
-  lang_code = lang_code
-  return(as.list(data.frame(lang_code, l, lr, lmin, degree_opt, opt_score, p_value, tau)))
+  return(c(lang_code, "L", "F", tokens, types, l, lr, lmin, degree_opt, opt_score, p_value, 0, tau))
 }
 ```
 
 ## Computing stats
 
 ```{r}
-df <- data.frame(matrix(ncol = 8, nrow = 0))
-cols <- c("lang_code","l", "lr", "lmin", "degree_opt", "opt_score", "p_value","tau")
+df <- data.frame(matrix(ncol = 13, nrow = 0))
+cols <- c("lang_code", "name", "family", "tokens", "types", "l", "lr", "lmin", "degree_opt", "opt_score", "p_value", "p_value_c", "tau")
 colnames(df) <- cols
 
+freq_table <- data.frame(matrix(ncol = 4, nrow = 0))
+cols <- c("lang_code", "text", "length", "frequency")
+colnames(freq_table) <- cols
+
+k = 0
 for (file in list.files("out")){
-  freq_table = read.table(paste0("out/", file), header = FALSE)
+  table = read.table(paste0("out/", file), header = FALSE)
   lang_code = substr(file, start = 1, stop = nchar(file)-4)
-  df[lang_code,] <- compute_stats(freq_table, lang_code)
+  df[lang_code,] <- compute_stats(table, lang_code)
+  for (i in 1:nrow(table)){
+    freq_table[k,] <- c(lang_code, table$V1[i], table$V2[i], table$V3[i])
+    k = k+1
+  }
+}
+df[, 4:13] <- sapply(df[, 4:13], as.numeric)
+df <- df[df$degree_opt < 1,] # filter out perfect optimality
+freq_table[, 3:4] <- sapply(freq_table[, 3:4], as.numeric)
+
+# add lang names and family
+for (i in 1:nrow(df)){
+  lang_name = "<None>"
+  code = df[,"lang_code"][i]
 }
 
-df <- df[df$degree_opt < 1,] # filter out perfect optimality
 ```
+
 ## Plot stats
+```{r}
+plot = ggplot(freq_table, aes(x = length, y = frequency)) +
+  geom_point(size=0.5) + theme_light() +
+        #geom_abline(slope=1, intercept=0) +
+  ggtitle("Word Frequency vs Word Length") + facet_wrap(~lang_code)
+plot
+
+```
+
+```{r}
+df[c("name", "family", "tokens", "types", "tau", "p_value", "p_value_c")]
+```
+
+```{r}
+df[c("name", "family", "lmin", "l", "lr", "degree_opt", "opt_score")]
+```
 
 ```{r}
 
 plot = ggplot(df, aes(x = lr, y = l, color = opt_score)) +
   geom_point(size=3) + theme_light() + coord_fixed() + xlim(0,13) + ylim(0,13) +
         geom_abline(slope=1, intercept=0) +
-  geom_text(
+  geom_text_repel(
     label=df$lang_code,
-    nudge_x = 0.25, nudge_y = -0.25,
-    check_overlap = T
+    nudge_x = 0.25, nudge_y = -0.25
   ) + ggtitle("Language Compression - Mean Lenght vs Random Baseline")
 plot
 
