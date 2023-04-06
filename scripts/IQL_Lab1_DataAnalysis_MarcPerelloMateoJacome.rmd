@@ -10,24 +10,28 @@ output:
 
 ## Load functions
 
-```{r}
+```{r echo=FALSE}
 library(ggplot2)
 library(ggrepel)
 options(ggrepel.max.overlaps = Inf)
+library(kableExtra)
 
 lang_info <- data.frame(code = c("af","ar","bg","bn","ca","cs","da","en","es","eu","fi","fr","ga","gu","he","hi","hr","hsb",
-                                 "hu","hy","id","it","kn","ky","la","lb","lg","lij","lt","lv"),
+                                 "hu","hy","id","it","kn","ky","la","lb","lg","lij","lt","lv","et"),
                         name = c("Afrikaans","Arabic","Bulgarian","Bengali","Catalan","Czech","Danish","English","Spanish","Basque",
                                  "Finnish","French","Irish","Gujarati","Hebrew","Hindi","Croatian","Upper Sorbian","Hungarian",
                                  "Armenian","Indonesian","Italian","Kannada","Kyrgyz","Latin","Luxembourgish","Luganda","Ligurian",
-                                 "Lithuanian","Latvian"),
+                                 "Lithuanian","Latvian","Estonian"),
                         fam  = c("Indo-European","Afro-Asiatic","Indo-European","Indo-European","Indo-European","Indo-European",
                                  "Indo-European","Indo-European","Indo-European","Language isolate","Uralic","Indo-European",
                                  "Indo-European","Indo-European","Afro-Asiatic","Indo-European","Indo-European","Indo-European",
                                  "Uralic","Indo-European","Austronesian","Indo-European","Dravidian","Turkic","Indo-European",
-                                 "Indo-European","Atlantic–Congo","Indo-European","Indo-European","Indo-European"))
-                              
+                                 "Indo-European","Atlantic–Congo","Indo-European","Indo-European","Indo-European","Uralic"),
+                        stringsAsFactors = FALSE)
 
+```
+
+```{r}
 mean_word_length <- function(freq_table){
   # Obtain relative frequency
   sum_freq = sum(freq_table$V3)
@@ -102,16 +106,27 @@ df[, 4:13] <- sapply(df[, 4:13], as.numeric)
 df <- df[df$degree_opt < 1,] # filter out perfect optimality
 freq_table[, 3:4] <- sapply(freq_table[, 3:4], as.numeric)
 
+# Apply correction to p-values
+df$p_value_c <- p.adjust(df$p_value, method="holm")
+```
+
+```{r echo=FALSE}
 # add lang names and family
 for (i in 1:nrow(df)){
-  lang_name = "<None>"
   code = df[,"lang_code"][i]
+  for (j in 1:nrow(lang_info)){
+    if (lang_info[,"code"][j] == code){
+      df[,"name"][i] = lang_info[,"name"][j]
+      df[,"family"][i] = lang_info[,"fam"][j]
+      break
+    }
+  }
 }
 
 ```
 
 ## Plot stats
-```{r}
+```{r echo=FALSE}
 plot = ggplot(freq_table, aes(x = length, y = frequency)) +
   geom_point(size=0.5) + theme_light() +
         #geom_abline(slope=1, intercept=0) +
@@ -120,15 +135,15 @@ plot
 
 ```
 
-```{r}
-df[c("name", "family", "tokens", "types", "tau", "p_value", "p_value_c")]
+```{r echo=FALSE}
+kbl(df[c("name", "family", "tokens", "types", "tau", "p_value", "p_value_c")], digits=100, row.names=FALSE)
 ```
 
-```{r}
-df[c("name", "family", "lmin", "l", "lr", "degree_opt", "opt_score")]
+```{r echo=FALSE}
+kbl(df[c("name", "family", "lmin", "l", "lr", "degree_opt", "opt_score")], row.names=FALSE)
 ```
 
-```{r}
+```{r echo=FALSE}
 
 plot = ggplot(df, aes(x = lr, y = l, color = opt_score)) +
   geom_point(size=3) + theme_light() + coord_fixed() + xlim(0,13) + ylim(0,13) +
